@@ -1,0 +1,47 @@
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle
+.gradle/
+build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Local properties
+local.properties
+
+# Log/OS/Temp
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Caches
+.cxx/
+caches/
+daemon/
+native/
+
+# Kotlin/Java
+out/
+
+# Wrapper
+wrapper/dists/
+
+# VSCode
+.vscode/
+
+# Others
+*.keystore
+*.jks
+*.bak
+*.swp
+*.swo
+
+# Ignore bat/自定义脚本可选
+# *.bat 

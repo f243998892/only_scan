@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">生产扫码</string>
+    <string name="login">登录</string>
+    <string name="enter_name">请输入姓名</string>
+    <string name="scan_code">扫描二维码</string>
+    <string name="single_scan">单个扫码</string>
+    <string name="continuous_scan">连续扫码</string>
+    <string name="scan_result">扫描结果</string>
+    <string name="upload">上传数据</string>
+    <string name="upload_success">上传成功</string>
+    <string name="upload_failed">上传失败</string>
+    <string name="scan_success">扫码成功</string>
+    <string name="adjust_angle">请调整角度重新扫描</string>
+    <string name="already_recorded">已录入</string>
+    <string name="process_type">工序类型</string>
+    <string name="dip_coating">浸漆</string>
+    <string name="car_stop">车止口</string>
+    <string name="please_select">请选择工序</string>
+</resources> 
