@@ -66,11 +66,11 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             
             val product = repository.findProductByCode(code)
             if (product != null) {
-                if (repository.isProcessAlreadyRecorded(product, processType)) {
+                if (repository.isProcessAlreadyRecorded(product, processType.displayName)) {
                     _statusMessage.value = "已录入"
                     _uploadResult.value = false
                 } else {
-                    val result = repository.updateProductProcess(code, processType, username)
+                    val result = repository.updateProductProcess(code, processType.displayName, username)
                     if (result) {
                         _statusMessage.value = "上传成功"
                         _uploadResult.value = true
@@ -108,10 +108,10 @@ class ScanViewModel(application: Application) : AndroidViewModel(application) {
             for (code in codes) {
                 val product = repository.findProductByCode(code)
                 if (product != null) {
-                    if (repository.isProcessAlreadyRecorded(product, processType)) {
+                    if (repository.isProcessAlreadyRecorded(product, processType.displayName)) {
                         alreadyRecordedCount++
                     } else {
-                        val result = repository.updateProductProcess(code, processType, username)
+                        val result = repository.updateProductProcess(code, processType.displayName, username)
                         if (result) {
                             successCount++
                         }
