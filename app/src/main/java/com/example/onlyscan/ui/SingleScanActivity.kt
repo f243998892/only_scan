@@ -142,7 +142,6 @@ class SingleScanActivity : AppCompatActivity() {
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
-            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
         val preview = previewBuilder
             .setTargetResolution(android.util.Size(1080, 1080))
             .build().also {
@@ -154,7 +153,6 @@ class SingleScanActivity : AppCompatActivity() {
         Camera2Interop.Extender(analysisBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
-            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
         val imageAnalyzer = analysisBuilder
             .setTargetResolution(android.util.Size(1080, 1080))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -162,14 +160,20 @@ class SingleScanActivity : AppCompatActivity() {
                 it.setAnalyzer(cameraExecutor) { imageProxy ->
                     if (isScanning) {
                         try {
-                            val qrCode = QRCodeUtils.decodeQRCodeFromImage(this, imageProxy)
-                            Log.d(TAG, "ZXing解析结果: $qrCode")
-                            if (!qrCode.isNullOrEmpty()) {
-                                isScanning = false // 暂停扫描
-                                runOnUiThread {
+                            val (qrCode, aiTip) = QRCodeUtils.decodeQRCodeWithAIDetect(this, imageProxy)
+                            runOnUiThread {
+                                if (!aiTip.isNullOrEmpty()) {
+                                    binding.aiTipTextView.text = aiTip
+                                    binding.aiTipTextView.visibility = View.VISIBLE
+                                } else {
+                                    binding.aiTipTextView.visibility = View.GONE
+                                }
+                                if (!qrCode.isNullOrEmpty()) {
+                                    isScanning = false // 暂停扫描
                                     showScanStatus("扫码成功")
                                     vibrateAndBeep()
                                     viewModel.processScannedCode(qrCode, false)
+                                    binding.aiTipTextView.visibility = View.GONE
                                 }
                             }
                         } catch (e: Exception) {

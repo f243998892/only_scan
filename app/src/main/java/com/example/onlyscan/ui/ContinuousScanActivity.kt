@@ -164,7 +164,6 @@ class ContinuousScanActivity : AppCompatActivity() {
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
-            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
         val preview = previewBuilder
             .setTargetResolution(android.util.Size(1080, 1080))
             .build().also {
@@ -174,23 +173,28 @@ class ContinuousScanActivity : AppCompatActivity() {
         Camera2Interop.Extender(analysisBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
-            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
         val imageAnalyzer = analysisBuilder
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also {
                 it.setAnalyzer(cameraExecutor) { imageProxy ->
                     try {
-                        val qrCode = QRCodeUtils.decodeQRCodeFromImage(this, imageProxy)
-                        Log.d(TAG, "ZXing解析结果: $qrCode")
-                        if (!qrCode.isNullOrEmpty()) {
-                            val currentTime = System.currentTimeMillis()
-                            if (qrCode != lastScannedCode || currentTime - lastScannedTime > 2000) {
-                                lastScannedCode = qrCode
-                                lastScannedTime = currentTime
-                                runOnUiThread {
+                        val (qrCode, aiTip) = QRCodeUtils.decodeQRCodeWithAIDetect(this, imageProxy)
+                        runOnUiThread {
+                            if (!aiTip.isNullOrEmpty()) {
+                                binding.aiTipTextView.text = aiTip
+                                binding.aiTipTextView.visibility = View.VISIBLE
+                            } else {
+                                binding.aiTipTextView.visibility = View.GONE
+                            }
+                            if (!qrCode.isNullOrEmpty()) {
+                                val currentTime = System.currentTimeMillis()
+                                if (qrCode != lastScannedCode || currentTime - lastScannedTime > 2000) {
+                                    lastScannedCode = qrCode
+                                    lastScannedTime = currentTime
                                     showScanStatus("扫码成功")
                                     vibrateAndBeep()
                                     viewModel.processScannedCode(qrCode, true)
+                                    binding.aiTipTextView.visibility = View.GONE
                                 }
                             }
                         }

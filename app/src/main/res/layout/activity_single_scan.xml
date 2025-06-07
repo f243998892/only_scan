@@ -36,4 +36,18 @@
         tools:text="扫码成功"
         tools:visibility="visible" />
 
+    <TextView
+        android:id="@+id/aiTipTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="#FFEB3B"
+        android:textSize="16sp"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/scanBoxView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="环境过暗，请开启补光灯" />
+
 </androidx.constraintlayout.widget.ConstraintLayout> 
