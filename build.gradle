@@ -1,6 +1,7 @@
 buildscript {
     ext {
-        agp_version = '8.10.1' // AGP 版本
+        agp_version = '8.10.1'
+        agp_version1 = agp_version// AGP 版本
     }
     repositories {
         // 优先使用官方仓库（确保 AGP 和 Kotlin 插件正确解析）

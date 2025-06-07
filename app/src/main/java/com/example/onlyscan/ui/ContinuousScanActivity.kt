@@ -22,6 +22,16 @@ import com.example.onlyscan.util.QRCodeUtils
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import androidx.camera.camera2.interop.Camera2Interop
+import android.hardware.camera2.CaptureRequest
+import android.util.Range
+import android.os.Vibrator
+import android.os.VibrationEffect
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.view.WindowManager
+import androidx.camera.core.Camera
+import com.google.android.material.button.MaterialButton
 
 /**
  * 连续扫码界面
@@ -45,12 +55,25 @@ class ContinuousScanActivity : AppCompatActivity() {
     private var lastScannedCode: String = ""
     private var lastScannedTime: Long = 0
     
+    private var camera: Camera? = null
+    private var torchOn = false
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate")
         binding = ActivityContinuousScanBinding.inflate(layoutInflater)
         setContentView(binding.root)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        // 屏幕常亮
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // 添加补光灯按钮
+        val torchButton = MaterialButton(this).apply {
+            text = "补光灯"
+            setOnClickListener {
+                toggleTorch()
+            }
+        }
+        binding.root.addView(torchButton)
         setupRecyclerView()
         setupButtons()
         // 检查相机权限
@@ -137,27 +160,36 @@ class ContinuousScanActivity : AppCompatActivity() {
      */
     private fun bindCameraUseCases(cameraProvider: ProcessCameraProvider) {
         Log.d(TAG, "bindCameraUseCases")
-        val preview = Preview.Builder()
-            .build()
-            .also {
+        val previewBuilder = Preview.Builder()
+        Camera2Interop.Extender(previewBuilder)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
+        val preview = previewBuilder
+            .setTargetResolution(android.util.Size(1080, 1080))
+            .build().also {
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
-        val imageAnalyzer = ImageAnalysis.Builder()
+        val analysisBuilder = ImageAnalysis.Builder()
+        Camera2Interop.Extender(analysisBuilder)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(30, 30))
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, true)
+        val imageAnalyzer = analysisBuilder
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
-            .also {
+            .build().also {
                 it.setAnalyzer(cameraExecutor) { imageProxy ->
                     try {
                         val qrCode = QRCodeUtils.decodeQRCodeFromImage(this, imageProxy)
                         Log.d(TAG, "ZXing解析结果: $qrCode")
                         if (!qrCode.isNullOrEmpty()) {
                             val currentTime = System.currentTimeMillis()
-                            // 防止短时间内重复识别同一个码
                             if (qrCode != lastScannedCode || currentTime - lastScannedTime > 2000) {
                                 lastScannedCode = qrCode
                                 lastScannedTime = currentTime
                                 runOnUiThread {
                                     showScanStatus("扫码成功")
+                                    vibrateAndBeep()
                                     viewModel.processScannedCode(qrCode, true)
                                 }
                             }
@@ -171,7 +203,7 @@ class ContinuousScanActivity : AppCompatActivity() {
             }
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
+            camera = cameraProvider.bindToLifecycle(
                 this as LifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 preview,
@@ -221,5 +253,32 @@ class ContinuousScanActivity : AppCompatActivity() {
         super.onDestroy()
         Log.d(TAG, "onDestroy，关闭cameraExecutor")
         cameraExecutor.shutdown()
+    }
+    
+    private fun vibrateAndBeep() {
+        // 强烈震动，持续500ms
+        try {
+            val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                vibrator.vibrate(500)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "震动失败: "+e.message)
+        }
+        // 刺耳提示音，走铃声音量通道，持续1秒
+        try {
+            // STREAM_RING 走系统铃声音量，TONE_SUP_ERROR为刺耳警告音
+            val toneGen = ToneGenerator(AudioManager.STREAM_RING, 100)
+            toneGen.startTone(ToneGenerator.TONE_SUP_ERROR, 1000)
+        } catch (e: Exception) {
+            Log.e(TAG, "音效失败: "+e.message)
+        }
+    }
+    
+    private fun toggleTorch() {
+        camera?.cameraControl?.enableTorch(!torchOn)
+        torchOn = !torchOn
     }
 } 

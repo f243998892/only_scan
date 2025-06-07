@@ -11,12 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <View
-        android:id="@+id/scannerOverlay"
+    <com.example.onlyscan.ui.ScanBoxView
+        android:id="@+id/scanBoxView"
         android:layout_width="240dp"
         android:layout_height="240dp"
-        android:background="@android:color/transparent"
-        android:foreground="@drawable/scanner_frame"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
